@@ -22,12 +22,17 @@ checkPatients.directive("checkPatients", function ($http) {
         d3.select(el).append("p").style("margin", "0px").html("Select patient: <br>");
         d3.select(el).selectAll("select").remove();
         var patientInfo = window.location.href.split("?patientInfo=")[1];
+        console.log(patientInfo);
         patientInfo = patientInfo.replace(/%22/g, "\"");
         patientInfo = patientInfo.replace(/%7B/g, "{");
         patientInfo = patientInfo.replace(/%7D/g, "}");
         patientInfo = patientInfo.replace(/%5B/g, "[");
         patientInfo = patientInfo.replace(/%5D/g, "]");
         patientInfo = JSON.parse(patientInfo);
+        console.log(patientInfo);
+        var baseUrl = patientInfo.baseUrl;
+        delete patientInfo.baseUrl;
+        console.log(baseUrl);
         var patients = Object.keys(patientInfo);
 
         if (patientInfo.length == 0) {
@@ -87,7 +92,7 @@ checkPatients.directive("checkPatients", function ($http) {
 
         $("#resource-select").on("change", function () {
             var relativeUrl = this.value;
-            $http.get("https://fhirtest.uhn.ca/baseDstu3/" + relativeUrl)
+            $http.get(baseUrl + relativeUrl)
                 .then(function (success) {
                         var resourceJSON = syntaxHighlight(JSON.stringify(success.data, undefined, 4));
                         setTimeout(function () {
@@ -103,7 +108,7 @@ checkPatients.directive("checkPatients", function ($http) {
         });
 
         var relativeUrl = $("#resource-select").val();
-        $http.get("https://fhirtest.uhn.ca/baseDstu3/" + relativeUrl)
+        $http.get(baseUrl + relativeUrl)
             .then(function (success) {
                     var resourceJSON = syntaxHighlight(JSON.stringify(success.data, undefined, 4));
                     setTimeout(function () {

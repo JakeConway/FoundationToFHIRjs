@@ -48,6 +48,29 @@ foundationToFhir.directive("grabFiles", function () {
     }
 });
 
+foundationToFhir.directive("baseUrl", function() {
+   return {
+       restrict: "A",
+       scope: {},
+       link: link
+   };
+
+   function link(scope, element) {
+       var el = element[0];
+
+       d3.select(el).append("p")
+           .html("Base URL: ");
+
+       d3.select(el).append("input")
+           .attr("id", "base-url")
+           .attr("type", "text")
+           .attr("name", "baseurl")
+           .style("width", "300px");
+
+       $("#base-url").val("http://fhirtest.uhn.ca/baseDstu3/");
+   }
+});
+
 foundationToFhir.directive("foundationToFhirDirective", ['$http', function ($http) {
     return {
         restrict: "A",
@@ -80,17 +103,17 @@ function initResources(scope, $http, files, i, l) {
         window.scrollTo(0,document.body.scrollHeight);
         var patientInfo = scope.uploadedPatientInfo;
         setTimeout(function() {
-            $http({
-                url: "/transfer/",
-                method: "POST",
-                data: patientInfo
-            }).then(function(success){
-                setTimeout(function() {
-                    window.location = "/checkpatients/";
-                }, 200);
-            }, function(error) {
-                console.log(error);
-            });
+            //$http({
+            //    url: "/transfer/",
+            //    method: "POST",
+            //    data: patientInfo
+            //}).then(function(success){
+            //    setTimeout(function() {
+            //        window.location = "/checkpatients/";
+            //    }, 200);
+            //}, function(error) {
+            //    console.log(error);
+            //});
             //window.location = "/checkpatients";
             // comment out above window.location and post, and uncomment the one below when doing development testing on this JS library
            // window.location = "http://localhost:63342/FoundationToFHIRjs/checkpatients.html" + "?patientInfo=" + patientInfo;
@@ -121,7 +144,7 @@ function initResources(scope, $http, files, i, l) {
     //Has ID
     var condition = new foundationFhirCondition();
     //Has ID
-    var diagnosticRequest = new foundationFhirDiagnosticRequest();
+    var procedureRequest = new foundationFhirProcedureRequest();
     //Has ID
     var specimen = foundationFhirSpecimen();
     //Has ID
@@ -137,7 +160,7 @@ function initResources(scope, $http, files, i, l) {
     pathologist.practitionerResource.id = patient.patientResource.id + "patho1";
     conditionAddId(condition.conditionResource, patient.getPatientId());
     diagnosticReportAddId(diagnosticReport.diagnosticReportResource, DOM);
-    diagnosticRequestAddId(diagnosticRequest.diagnosticRequestResource, diagnosticReport.getDiagnosticReportId());
+    procedureRequestAddId(procedureRequest.procedureRequestResource, diagnosticReport.getDiagnosticReportId());
     specimenAddId(specimen.specimenResource, DOM);
     //Add type to specimen now since it is used to reference specimen in genomic alterations
     specimenAddTypeFromFoundation(specimen.specimenResource, DOM);
@@ -149,7 +172,7 @@ function initResources(scope, $http, files, i, l) {
     provenanceAddId(provenance.provenanceResource, diagnosticReport.getDiagnosticReportId());
 
     var resourceArr = [FoundationMedicine, organization, orderingPhysician, pathologist, patient, condition, specimen,
-        diagnosticReport, diagnosticRequest, provenance].concat(observationArr);
+        diagnosticReport, procedureRequest, provenance].concat(observationArr);
 
     scope.uploadedPatientInfo[patient.getPatientId()] = [
         "Organization/" + FoundationMedicine.getOrganizationId(),
@@ -159,7 +182,7 @@ function initResources(scope, $http, files, i, l) {
         "Patient/" + patient.getPatientId(),
         "DiagnosticReport/" + diagnosticReport.getDiagnosticReportId(),
         "Condition/" + condition.getConditionId(),
-        "DiagnosticRequest/" + diagnosticRequest.getDiagnosticRequestId(),
+        "procedureRequest/" + procedureRequest.getProcedureRequestId(),
         "Specimen/" + specimen.getSpecimenId(),
         "Provenance/" + provenance.getProvenanceId()
     ];
@@ -188,7 +211,7 @@ function addResourceRelativeUrlsToUploadedPatientInfo(resourceArr, uploadedPatie
 }
 
 function completeResources(scope, $http, FoundationMedicine, organization, orderingPhysician, pathologist, patient, condition, specimen,
-                           diagnosticReport, diagnosticRequest, provenance, observationArr, fileIndex, files, nFiles, nResources, DOM) {
+                           diagnosticReport, procedureRequest, provenance, observationArr, fileIndex, files, nFiles, nResources, DOM) {
     organizationAddIdentifierFromFoundation(organization.organizationResource, DOM);
     organizationAddNameFromFoundation(organization.organizationResource, DOM);
 
@@ -221,14 +244,15 @@ function completeResources(scope, $http, FoundationMedicine, organization, order
     addPatientSubjectReference(condition.conditionResource, patient.getPatientId(), patient.getPatientFullName());
     conditionAddEvidenceDetailReference(condition.conditionResource, diagnosticReport.getDiagnosticReportId(), DOM);
 
-    diagnosticRequestAddNote(diagnosticRequest.diagnosticRequestResource, diagnosticReport.getDiagnosticReportTestPerformed());
-    diagnosticRequestAddreasonReference(diagnosticRequest.diagnosticRequestResource, condition.getConditionId(), condition.getCondition());
-    diagnosticRequestAddRequester(diagnosticRequest.diagnosticRequestResource, orderingPhysician.getPractitionerId(), orderingPhysician.getPractitionerName());
-    addPatientSubjectReference(diagnosticRequest.diagnosticRequestResource, patient.getPatientId(), patient.getPatientFullName());
-    addFoundationAsPerformer(diagnosticRequest.diagnosticRequestResource);
+    procedureRequestAddNote(procedureRequest.procedureRequestResource, diagnosticReport.getDiagnosticReportTestPerformed());
+    procedureRequestAddreasonReference(procedureRequest.procedureRequestResource, condition.getConditionId(), condition.getCondition());
+    procedureRequestAddRequester(procedureRequest.procedureRequestResource, orderingPhysician, organization);
+    addPatientSubjectReference(procedureRequest.procedureRequestResource, patient.getPatientId(), patient.getPatientFullName());
+    addFoundationAsPerformer(procedureRequest.procedureRequestResource);
+    addSpecimenReference(procedureRequest.procedureRequestResource, specimen.getSpecimenId(), specimen.getSpecimenType());
 
     addPatientSubjectReference(specimen.specimenResource, patient.getPatientId(), patient.getPatientFullName());
-    specimenAddRequestReference(specimen.specimenResource, diagnosticRequest.getDiagnosticRequestId(), diagnosticRequest.getDiagnosticRequestNote());
+    specimenAddRequestReference(specimen.specimenResource, procedureRequest.getProcedureRequestId(), procedureRequest.getProcedureRequestNote());
     specimenAddNoteFromFoundation(specimen.specimenResource, DOM);
     specimenAddReceivedTimeFromFoundation(specimen.specimenResource, DOM);
     specimenAddCollectionInfoFromFoundation(specimen.specimenResource, DOM);
@@ -260,12 +284,12 @@ function completeResources(scope, $http, FoundationMedicine, organization, order
     //go back and link all of the observations to the diagnostic report
     diagnosticReportReferenceObservations(diagnosticReport.diagnosticReportResource, observationArr);
 
-    diagnosticReportAddSpecimenReference(diagnosticReport.diagnosticReportResource, specimen.getSpecimenId(), specimen.getSpecimenType());
+    addSpecimenReference(diagnosticReport.diagnosticReportResource, specimen.getSpecimenId(), specimen.getSpecimenType());
 
     diagnosticReportAddContainedArr(diagnosticReport.diagnosticReportResource, observationArr, specimen);
 
     var resourceArr = [FoundationMedicine, organization, orderingPhysician, pathologist, patient, condition, specimen,
-        diagnosticReport, diagnosticRequest, provenance].concat(observationArr);
+        diagnosticReport, procedureRequest, provenance].concat(observationArr);
 
     setTimeout(function() {
         putResourcesToHapiFhirDstu3Server(scope, $http, resourceArr, 0, nResources, "Completing", fileIndex, files, nFiles);
@@ -319,10 +343,11 @@ function putNonInitializedResourcesToHapiFhirDstu3Server($http, resourceArr, ind
 function putNonInitializedResourceToHapiFhirDstu3Server($http, resourceArr, type, index) {
     var data = resourceArr[index][type.lowerCaseFirstLetter() + "Resource"];
     var id = data.id;
-    var url = "https://fhirtest.uhn.ca/baseDstu3/" + type+ "/" + id+ "?_format=json";
+    var baseUrl = $("#base-url").val();
+    var url = baseUrl + type+ "/" + id+ "?_format=json";
     $http.put(url, data).then(function(success) {
         d3.select("#parser-div").append("p")
-                .html("<b>" + "Initializing" + ":</b> " + data.resourceType + " resource <b>" + id+ "</b> <span style='color:#2f0'>successfully</span> PUT to http://fhirtest.uhn.ca/baseDstu3/ server");
+                .html("<b>" + "Initializing" + ":</b> " + data.resourceType + " resource <b>" + id+ "</b> <span style='color:#2f0'>successfully</span> PUT to " + baseUrl);
         window.scrollTo(0,document.body.scrollHeight);
         putNonInitializedResourcesToHapiFhirDstu3Server($http, resourceArr, index+1);
     }, function(error) {
@@ -334,11 +359,12 @@ function putNonInitializedResourceToHapiFhirDstu3Server($http, resourceArr, type
 function putToHapiFhirDstu3Server(scope, $http, type, resourceArr, index, nResources, method, fileIndex, files, nFiles, DOM) {
     var data = resourceArr[index][type.lowerCaseFirstLetter() + "Resource"];
     var id = data.id;
-    var url = 'https://fhirtest.uhn.ca/baseDstu3/' + type + "/" + id + '?_format=json';
+    var baseUrl = $("#base-url").val();
+    var url = baseUrl + type + "/" + id + '?_format=json';
 
     $http.put(url, data).then(function (success) {
         d3.select("#parser-div").append("p")
-                .html("<b>" + method + ":</b> " + data.resourceType + " resource <b>" + id + "</b> <span style='color:#2f0'>successfully</span> PUT to http://fhirtest.uhn.ca/baseDstu3/ server");
+                .html("<b>" + method + ":</b> " + data.resourceType + " resource <b>" + id + "</b> <span style='color:#2f0'>successfully</span> PUT to " + baseUrl);
         window.scrollTo(0,document.body.scrollHeight);
         putResourcesToHapiFhirDstu3Server(scope, $http, resourceArr, index+1, nResources, method, fileIndex, files, nFiles, DOM);
     }, function (error) {
@@ -446,10 +472,6 @@ function observationAndSequenceAddRearrangementInfo(observationArr, sequenceArr,
     addFoundationAsPerformer(observation.observationResource);
     observationArr.push(observation);
 }
-
-
-
-
 
 function addVariantReportCopyNumberAlterationSequencesAndObservations(observationArr, sequenceArr, diagnosticReport, specimen, patient, DOM) {
     var copyNumberAlterations = DOM.getElementsByTagName("copy-number-alteration");
@@ -860,41 +882,49 @@ function provenanceAddTargetResources(provenanceResource, diagnosticReportId, di
     }
 }
 
-//Initialize a FHIR diagnosticRequest object to be built by a Foundation XML file
-function foundationFhirDiagnosticRequest() {
+//Initialize a FHIR procedureRequest object to be built by a Foundation XML file
+function foundationFhirProcedureRequest() {
     return {
-        diagnosticRequestResource: {
-            resourceType: "DiagnosticRequest",
+        procedureRequestResource: {
+            resourceType: "ProcedureRequest",
             status: "completed",
             intent: "order"
         },
-        getDiagnosticRequestId: function() {
-          return this.diagnosticRequestResource.id;
+        getProcedureRequestId: function() {
+          return this.procedureRequestResource.id;
         },
-        getDiagnosticRequestNote: function () {
-          return this.diagnosticRequestResource.note;
+        getProcedureRequestNote: function () {
+          return this.procedureRequestResource.note;
         },
-        resourceType: "DiagnosticRequest"
+        resourceType: "ProcedureRequest"
     };
 }
 
-function diagnosticRequestAddId(diagnosticRequestResource, diagnosticReportId) {
-    diagnosticRequestResource.id = diagnosticReportId + "-request-1";
+function procedureRequestAddId(procedureRequestResource, diagnosticReportId) {
+    procedureRequestResource.id = diagnosticReportId + "-request-1";
 }
 
-function diagnosticRequestAddNote(diagnosticRequestResource, diagnosticReportTestPerformed) {
-    diagnosticRequestResource.note = "This is a request for a " + diagnosticReportTestPerformed;
+function procedureRequestAddNote(procedureRequestResource, diagnosticReportTestPerformed) {
+    procedureRequestResource.note =[{
+        text: "This is a request for a " + diagnosticReportTestPerformed
+    }];
 }
 
-function diagnosticRequestAddRequester(diagnosticRequestResource, orderingMDId, orderingMDName) {
-    diagnosticRequestResource.requester = {
-        reference: "Practitioner/" + orderingMDId,
-        display: orderingMDName
+function procedureRequestAddRequester(procedureRequestResource, orderingPhysician, organization) {
+    procedureRequestResource.requester = {
+        agent: {
+            reference: "Practitioner/" + orderingPhysician.getPractitionerId(),
+            display: orderingPhysician.getPractitionerId()
+        },
+        onBehalfOf: {
+            reference: "Organization/" + organization.getOrganizationId(),
+            display: organization.getOrganizationName()
+        }
     };
 }
 
-function diagnosticRequestAddreasonReference(diagnosticRequestResource, conditionId, condition) {
-    diagnosticRequestResource.reasonReference = [{
+function procedureRequestAddreasonReference(procedureRequestResource, conditionId, condition) {
+    procedureRequestResource.reasonReference = [{
         reference: "Condition/" + conditionId,
         display: condition
     }];
@@ -964,7 +994,7 @@ function specimenAddCollectionInfoFromFoundation(specimenResource, DOM) {
 
 function specimenAddRequestReference(specimenResource, resourceID, resourceText) {
     specimenResource.request = [{
-        reference: "DiagnosticRequest/" + resourceID,
+        reference: "ProcedureRequest/" + resourceID,
         display: resourceText
     }];
 }
@@ -1387,8 +1417,8 @@ function diagnosticReportReferenceObservations(diagnosticReportResource, observa
     }
 }
 
-function diagnosticReportAddSpecimenReference(diagnosticReportResource, specimenId, specimenType) {
-    diagnosticReportResource.specimen = [{
+function addSpecimenReference(resource, specimenId, specimenType) {
+    resource.specimen = [{
         reference: "Specimen/" + specimenId,
         display: specimenType
     }];
