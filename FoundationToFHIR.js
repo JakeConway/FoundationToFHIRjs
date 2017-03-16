@@ -67,7 +67,7 @@ foundationToFhir.directive("baseUrl", function() {
            .attr("name", "baseurl")
            .style("width", "300px");
 
-       $("#base-url").val("http://fhirtest.uhn.ca/baseDstu3/");
+       $("#base-url").val("https://fhirtest.uhn.ca/baseDstu3/");
    }
 });
 
