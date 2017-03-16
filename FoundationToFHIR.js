@@ -103,17 +103,17 @@ function initResources(scope, $http, files, i, l) {
         window.scrollTo(0,document.body.scrollHeight);
         var patientInfo = scope.uploadedPatientInfo;
         setTimeout(function() {
-            //$http({
-            //    url: "/transfer/",
-            //    method: "POST",
-            //    data: patientInfo
-            //}).then(function(success){
-            //    setTimeout(function() {
-            //        window.location = "/checkpatients/";
-            //    }, 200);
-            //}, function(error) {
-            //    console.log(error);
-            //});
+            $http({
+                url: "/transfer/",
+                method: "POST",
+                data: patientInfo
+            }).then(function(success){
+                setTimeout(function() {
+                    window.location = "/checkpatients/";
+                }, 200);
+            }, function(error) {
+                console.log(error);
+            });
             //window.location = "/checkpatients";
             // comment out above window.location and post, and uncomment the one below when doing development testing on this JS library
            // window.location = "http://localhost:63342/FoundationToFHIRjs/checkpatients.html" + "?patientInfo=" + patientInfo;
