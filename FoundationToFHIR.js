@@ -171,6 +171,11 @@ function initResources(scope, $http, files, i, l) {
     observationAddGenomicInfoFromFoundation(observationArr, specimen.getSpecimenId(), specimen.getSpecimenType(), DOM);
     provenanceAddId(provenance.provenanceResource, diagnosticReport.getDiagnosticReportId());
 
+    //init rearrangement resources because we have to link to to each other.. if we wait, one will exist on the server while the other doesnt
+    var rearrangements = DOM.getElementsByTagName("rearrangement");
+    var rearrangementsArr = makeInitRearrangementsArr(rearrangements, diagnosticReport.getDiagnosticReportId());
+    putNonInitializedResourcesToHapiFhirDstu3Server($http, rearrangementsArr, 0);
+
     var resourceArr = [FoundationMedicine, organization, orderingPhysician, pathologist, patient, condition, specimen,
         diagnosticReport, procedureRequest, provenance].concat(observationArr);
 
@@ -188,6 +193,19 @@ function initResources(scope, $http, files, i, l) {
     ];
 
     putResourcesToHapiFhirDstu3Server(scope, $http, resourceArr, 0, resourceArr.length, "Initializing", i, files, l, DOM);
+}
+
+function makeInitRearrangementsArr(rearrangements, reportId) {
+    var arr = [];
+    var l = rearrangements.length;
+    for(var i = 0; i < l; i++) {
+        var observation1 = foundationFhirObservation();
+        var observation2 = foundationFhirObservation();
+        observation1.observationResource.id =  reportId + "-rearrangement-" + (i+1) + "-targeted-gene";
+        observation2.observationResource.id =  reportId + "-rearrangement-" + (i+1) + "-other-gene";
+        arr.push(observation1, observation2);
+    }
+    return arr;
 }
 
 function foundationPractitionerAssertersToArr(practitioners, practitionerIdsAndNames) {
@@ -262,6 +280,7 @@ function completeResources(scope, $http, FoundationMedicine, organization, order
     var variantReportObservations = [];
     addVariantReportShortVariantSequencesAndObservations(variantReportObservations, sequenceArr, diagnosticReport, specimen, patient, DOM);
     addVariantReportCopyNumberAlterationSequencesAndObservations(variantReportObservations, sequenceArr, diagnosticReport, specimen, patient, DOM);
+    addVariantReportRearrangementSequencesAndObservations(variantReportObservations, sequenceArr, diagnosticReport, specimen, patient, DOM);
     putNonInitializedResourcesToHapiFhirDstu3Server($http, sequenceArr, 0);
     putNonInitializedResourcesToHapiFhirDstu3Server($http, variantReportObservations, 0);
 
@@ -293,7 +312,7 @@ function completeResources(scope, $http, FoundationMedicine, organization, order
 
     setTimeout(function() {
         putResourcesToHapiFhirDstu3Server(scope, $http, resourceArr, 0, nResources, "Completing", fileIndex, files, nFiles);
-    }, 1500);
+    }, 2000);
 }
 
 function generateResourcesFromFoundation(scope, files, $http) {
@@ -444,43 +463,89 @@ function foundationFhirSequence() {
     }
 }
 
-function addRearrangementSequencesAndObservations(observationArr, sequenceArr, diagnosticReport, specimen, patient, DOM) {
+function addVariantReportRearrangementSequencesAndObservations(observationArr, sequenceArr, diagnosticReport, specimen, patient, DOM) {
     var rearrangements = DOM.getElementsByTagName("rearrangement");
     var date = diagnosticReport.getReportDate();
     var reportId = diagnosticReport.getDiagnosticReportId();
+    // Might need to account for more than 1 sample
+    var nucleicAcidType = DOM.getElementsByTagName("sample")[0].getAttribute("nucleic-acid-type");
     var l = rearrangements.length;
     for(var i = 0; i < l; i++) {
-        // Might need to account for more than 1 sample
-        var nucleicAcidType = DOM.getElementsByTagName("sample")[0].getAttribute("nucleic-acid-type");
         observationAndSequenceAddRearrangementInfo(observationArr, sequenceArr, rearrangements[i], nucleicAcidType, date, specimen, patient, reportId, i+1);
     }
 }
 
-function observationAndSequenceAddRearrangementInfo(observationArr, sequenceArr, copyNumberAlt, nucleicAcidType, date, specimen, patient, reportId, variantNumber) {
-    var sequence = foundationFhirSequence();
-    sequenceAddReferenceToSpecimen(sequence.sequenceResource, specimen.getSpecimenId(), specimen.getSpecimenType());
-    sequenceAddTypeFromFoundation(sequence.sequenceResource, nucleicAcidType);
-    sequenceAddRefSeqChromosome(sequence.sequenceResource, copyNumberAlt);
-    addPatientSubjectReference(sequence.sequenceResource, patient.getPatientId(), patient.getPatientFullName());
-    addFoundationAsPerformer(sequence.sequenceResource);
-    sequenceArr.push(sequence);
+function observationAndSequenceAddRearrangementInfo(observationArr, sequenceArr, rearrangement, nucleicAcidType, date, specimen, patient, reportId, variantNumber) {
+    var sequence1 = foundationFhirSequence();
+    sequenceAddRearrangementId(sequence1.sequenceResource, reportId, variantNumber, "target-gene");
+    sequenceRearrangementAddStructureVariantFromFoundation(sequence1.sequenceResource, rearrangement, "pos1");
+    sequenceAddReferenceToSpecimen(sequence1.sequenceResource, specimen.getSpecimenId(), specimen.getSpecimenType());
+    sequenceAddTypeFromFoundation(sequence1.sequenceResource, nucleicAcidType);
+    rearrangementAddRefSeqChromosome(sequence1.sequenceResource, rearrangement, "pos1");
+    addPatientSubjectReference(sequence1.sequenceResource, patient.getPatientId(), patient.getPatientFullName());
+    addFoundationAsPerformer(sequence1.sequenceResource);
+    sequenceArr.push(sequence1);
 
-    var observation = foundationFhirObservation();
-    singleObservationAddDateTimeFromFoundation(observation.observationResource, date);
-    observationAddReferenceToSpecimen(observation.observationResource, specimen.getSpecimenId(), specimen.getSpecimenType());
-    addPatientSubjectReference(observation.observationResource, patient.getPatientId(), patient.getPatientFullName());
-    addFoundationAsPerformer(observation.observationResource);
-    observationArr.push(observation);
+    var observation1 = foundationFhirObservation();
+    addRearrangementId(observation1.observationResource, reportId, variantNumber, "targeted-gene");
+    addRearrangementGeneNameFromFoundation(observation1.observationResource, rearrangement, "targeted-gene");
+    variantReportAddReferenceToSequence(observation1.observationResource, sequence1.getSequenceId());
+    variantReportAddSequenceVariantType(observation1.observationResource, rearrangement);
+    singleObservationAddDateTimeFromFoundation(observation1.observationResource, date);
+    observationAddReferenceToSpecimen(observation1.observationResource, specimen.getSpecimenId(), specimen.getSpecimenType());
+    addPatientSubjectReference(observation1.observationResource, patient.getPatientId(), patient.getPatientFullName());
+    addFoundationAsPerformer(observation1.observationResource);
+
+    var sequence2 = foundationFhirSequence();
+    sequenceAddRearrangementId(sequence2.sequenceResource, reportId, variantNumber, "other-gene");
+    sequenceRearrangementAddStructureVariantFromFoundation(sequence2.sequenceResource, rearrangement, "pos2");
+    sequenceAddReferenceToSpecimen(sequence2.sequenceResource, specimen.getSpecimenId(), specimen.getSpecimenType());
+    sequenceAddTypeFromFoundation(sequence2.sequenceResource, nucleicAcidType);
+    rearrangementAddRefSeqChromosome(sequence2.sequenceResource, rearrangement, "pos2");
+    addPatientSubjectReference(sequence2.sequenceResource, patient.getPatientId(), patient.getPatientFullName());
+    addFoundationAsPerformer(sequence2.sequenceResource);
+    sequenceArr.push(sequence2);
+
+    var observation2 = foundationFhirObservation();
+    addRearrangementId(observation2.observationResource, reportId, variantNumber, "other-gene");
+    addRearrangementGeneNameFromFoundation(observation2.observationResource, rearrangement, "other-gene");
+    variantReportAddReferenceToSequence(observation2.observationResource, sequence2.getSequenceId());
+    variantReportAddSequenceVariantType(observation2.observationResource, rearrangement);
+    singleObservationAddDateTimeFromFoundation(observation2.observationResource, date);
+    observationAddReferenceToSpecimen(observation2.observationResource, specimen.getSpecimenId(), specimen.getSpecimenType());
+    addPatientSubjectReference(observation2.observationResource, patient.getPatientId(), patient.getPatientFullName());
+    addFoundationAsPerformer(observation2.observationResource);
+
+    relateRearrangementObservations(observation1, observation2);
+    observationArr.push(observation1);
+    observationArr.push(observation2);
+}
+
+function relateRearrangementObservations(observation1, observation2) {
+    observation1.observationResource.related = [{
+        type: "sequel-to",
+        target: {
+            reference: "Observation/" + observation2.getObservationId(),
+            display: "Other region/gene involved in rearrangement"
+        }
+    }];
+    observation2.observationResource.related = [{
+        type: "sequel-to",
+        target: {
+            reference: "Observation/" + observation1.getObservationId(),
+            display: "Other region/gene involved in rearrangement"
+        }
+    }];
 }
 
 function addVariantReportCopyNumberAlterationSequencesAndObservations(observationArr, sequenceArr, diagnosticReport, specimen, patient, DOM) {
     var copyNumberAlterations = DOM.getElementsByTagName("copy-number-alteration");
     var date = diagnosticReport.getReportDate();
     var reportId = diagnosticReport.getDiagnosticReportId();
+    // Might need to account for more than 1 sample
+    var nucleicAcidType = DOM.getElementsByTagName("sample")[0].getAttribute("nucleic-acid-type");
     var l = copyNumberAlterations.length;
     for(var i = 0; i < l; i++) {
-        // Might need to account for more than 1 sample
-        var nucleicAcidType = DOM.getElementsByTagName("sample")[0].getAttribute("nucleic-acid-type");
         observationAndSequenceAddCopyNumberAlterationInfo(observationArr, sequenceArr, copyNumberAlterations[i], nucleicAcidType, date, specimen, patient, reportId, i+1);
     }
 }
@@ -501,7 +566,7 @@ function observationAndSequenceAddCopyNumberAlterationInfo(observationArr, seque
     variantReportAddGeneNameFromFoundation(observation.observationResource, copyNumberAlt);
     variantReportAddReferenceToSequence(observation.observationResource, sequence.getSequenceId());
     addCopyNumberAlterationEventFromFoundation(observation.observationResource, copyNumberAlt);
-    addCopyNumberAlterationSequenceVariantType(observation.observationResource, copyNumberAlt);
+    variantReportAddSequenceVariantType(observation.observationResource, copyNumberAlt);
     singleObservationAddDateTimeFromFoundation(observation.observationResource, date);
     observationAddReferenceToSpecimen(observation.observationResource, specimen.getSpecimenId(), specimen.getSpecimenType());
     addPatientSubjectReference(observation.observationResource, patient.getPatientId(), patient.getPatientFullName());
@@ -517,6 +582,10 @@ function addCopyNumberAlterationId(observationResource, reportId, variantNumber)
     observationResource.id = reportId + "-copy-number-alt-" + variantNumber;
 }
 
+function addRearrangementId(observationResource, reportId, variantNumber, ext) {
+    observationResource.id = reportId + "-rearrangement-" + variantNumber + "-" + ext;
+}
+
 function addCopyNumberAlterationEventFromFoundation(observationResource, copyNumberAlt) {
     observationResource.extension.push({
         url: "http://hl7.org/fhir/StructureDefinition/observation-geneticsCopyNumberEvent",
@@ -526,13 +595,30 @@ function addCopyNumberAlterationEventFromFoundation(observationResource, copyNum
     });
 }
 
-function addCopyNumberAlterationSequenceVariantType(observationResource, copyNumberAlt) {
+function variantReportAddSequenceVariantType(observationResource, element) {
     observationResource.extension.push({
         url: "http://hl7.org/fhir/StructureDefinition/observation-geneticsDNASequenceVariantType",
         valueCodeableConcept: {
-            text: copyNumberAlt.getAttribute("type")
+            text: element.getAttribute("type")
         }
     });
+}
+
+function sequenceRearrangementAddStructureVariantFromFoundation(sequenceResource, rearrangement, attribute) {
+    var position = rearrangement.getAttribute(attribute).split(":")[1].split("-");
+    sequenceResource.structureVariant = [{
+        precisionOfBoundaries: rearrangement.getAttribute("status") + " structural variant. There are " +
+            rearrangement.getAttribute("supporting-read-pairs") + " supporting read pairs.",
+        length: parseInt(position[1]) - parseInt(position[0]),
+        outer: {
+            start: position[0],
+            end: position[1]
+        },
+        inner: {
+            start: position[0],
+            end: position[1]
+        }
+    }];
 }
 
 function sequenceCopyNumberAlterationAddStructureVariantFromFoundation(sequenceResource, copyNumberAlt) {
@@ -556,28 +642,29 @@ function addVariantReportShortVariantSequencesAndObservations(observationArr, se
     var shortVariants = DOM.getElementsByTagName("short-variant");
     var date = diagnosticReport.getReportDate();
     var reportId = diagnosticReport.getDiagnosticReportId();
+    // Might need to account for more than 1 sample
+    var nucleicAcidType = DOM.getElementsByTagName("sample")[0].getAttribute("nucleic-acid-type");
     var l = shortVariants.length;
     for(var i = 0; i < l; i++) {
-        // Might need to account for more than 1 sample
-        var nucleicAcidType = DOM.getElementsByTagName("sample")[0].getAttribute("nucleic-acid-type");
         observationAndSequenceAddShortVariantInfo(observationArr, sequenceArr, shortVariants[i], nucleicAcidType, date, specimen, patient, reportId, i+1);
     }
 }
 
 function observationAndSequenceAddShortVariantInfo(observationArr, sequenceArr, shortVariant, nucleicAcidType, date, specimen, patient, reportId, variantNumber) {
+    var observation = foundationFhirObservation();
+    addShortVariantId(observation.observationResource, reportId, variantNumber);
+
     var sequence = foundationFhirSequence();
     sequenceAddShortVariantId(sequence.sequenceResource, reportId, variantNumber);
     sequenceShortVariantAddCoverageFromFoundation(sequence.sequenceResource, shortVariant);
     sequenceAddRefSeqChromosome(sequence.sequenceResource, shortVariant);
-    sequenceShortVariantAddVariantFromFoundation(sequence.sequenceResource, shortVariant);
+    sequenceShortVariantAddVariantFromFoundation(sequence.sequenceResource, shortVariant, observation.getObservationId());
     sequenceAddReferenceToSpecimen(sequence.sequenceResource, specimen.getSpecimenId(), specimen.getSpecimenType());
     sequenceAddTypeFromFoundation(sequence.sequenceResource, nucleicAcidType);
     addPatientSubjectReference(sequence.sequenceResource, patient.getPatientId(), patient.getPatientFullName());
     addFoundationAsPerformer(sequence.sequenceResource);
     sequenceArr.push(sequence);
 
-    var observation = foundationFhirObservation();
-    addShortVariantId(observation.observationResource, reportId, variantNumber);
     addShortVariantTranscriptIdFromFoundation(observation.observationResource, shortVariant);
     addShortVariantAlleleFrequencyFromFoundation(observation.observationResource, shortVariant);
     variantReportAddGeneNameFromFoundation(observation.observationResource, shortVariant);
@@ -653,6 +740,15 @@ function addShortVariantAminoAcidChangeFromFoundation(observationResource, short
     });
 }
 
+function addRearrangementGeneNameFromFoundation(observationResource, element, attribute) {
+    observationResource.extension.push({
+        url: "http://hl7.org/fhir/StructureDefinition/observation-geneticsGene",
+        valueCodeableConcept: {
+            text: element.getAttribute(attribute)
+        }
+    });
+}
+
 function variantReportAddGeneNameFromFoundation(observationResource, element) {
     observationResource.extension.push({
         url: "http://hl7.org/fhir/StructureDefinition/observation-geneticsGene",
@@ -687,8 +783,20 @@ function sequenceAddCopyNumberAlterationId(sequenceResource, reportId, variantNu
     sequenceResource.id = reportId + "-copy-number-alt-" + variantNumber + "-seq";
 }
 
+function sequenceAddRearrangementId(sequenceResource, reportId, variantNumber, ext) {
+    sequenceResource.id = reportId + "-rearrangement-" + variantNumber + "-" + ext;
+}
+
 function sequenceAddTypeFromFoundation(sequenceResource, nucleicAcidType) {
     sequenceResource.type = nucleicAcidType;
+}
+
+function rearrangementAddRefSeqChromosome(sequenceResource, element, attribute) {
+    sequenceResource.referenceSeq = {
+        chromosome: {
+            text: element.getAttribute(attribute).split(":")[0]
+        }
+    };
 }
 
 function sequenceAddRefSeqChromosome(sequenceResource, element) {
@@ -706,7 +814,7 @@ function sequenceAddReferenceToSpecimen(sequenceResource, specimenId, specimenTy
     }
 }
 
-function sequenceShortVariantAddVariantFromFoundation(sequenceResource, shortVariant) {
+function sequenceShortVariantAddVariantFromFoundation(sequenceResource, shortVariant, observationId) {
     var position = shortVariant.getAttribute("position").split(":")[1];
     var variant = shortVariant.getAttribute("cds-effect");
     if(variant.includes(">")){
@@ -725,7 +833,11 @@ function sequenceShortVariantAddVariantFromFoundation(sequenceResource, shortVar
         start: position,
         end: position,
         observedAllele: variant[0],
-        referenceAllele: variant[1]
+        referenceAllele: variant[1],
+        variantPointer: {
+            reference: "Observation/" + observationId,
+            display: "Genetic observation that contains information on this variant"
+        }
     }];
 }
 
