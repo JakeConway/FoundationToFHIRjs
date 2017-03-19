@@ -172,6 +172,7 @@ function initResources(scope, $http, files, i, l) {
     provenanceAddId(provenance.provenanceResource, diagnosticReport.getDiagnosticReportId());
 
     //init rearrangement resources because we have to link to to each other.. if we wait, one will exist on the server while the other doesnt
+    // e.g. if target-gene exists and is linked to other-gene, but other-gene isnt on server when target-gene is PUT, then it will throw error
     var rearrangements = DOM.getElementsByTagName("rearrangement");
     var rearrangementsArr = makeInitRearrangementsArr(rearrangements, diagnosticReport.getDiagnosticReportId());
     putNonInitializedResourcesToHapiFhirDstu3Server($http, rearrangementsArr, 0);
