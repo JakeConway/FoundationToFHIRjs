@@ -313,7 +313,7 @@ function completeResources(scope, $http, FoundationMedicine, organization, order
 
     setTimeout(function() {
         putResourcesToHapiFhirDstu3Server(scope, $http, resourceArr, 0, nResources, "Completing", fileIndex, files, nFiles);
-    }, 2000);
+    }, 3000);
 }
 
 function generateResourcesFromFoundation(scope, files, $http) {
