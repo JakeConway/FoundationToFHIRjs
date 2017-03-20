@@ -175,7 +175,7 @@ function initResources(scope, $http, files, i, l) {
     // e.g. if target-gene exists and is linked to other-gene, but other-gene isnt on server when target-gene is PUT, then it will throw error
     var rearrangements = DOM.getElementsByTagName("rearrangement");
     var rearrangementsArr = makeInitRearrangementsArr(rearrangements, diagnosticReport.getDiagnosticReportId());
-    putNonInitializedResourcesToHapiFhirDstu3Server($http, rearrangementsArr, 0);
+    putNonInitializedResourcesToHapiFhirDstu3Server($http, rearrangementsArr, 0, null);
 
     var resourceArr = [FoundationMedicine, organization, orderingPhysician, pathologist, patient, condition, specimen,
         diagnosticReport, procedureRequest, provenance].concat(observationArr);
@@ -282,8 +282,6 @@ function completeResources(scope, $http, FoundationMedicine, organization, order
     addVariantReportShortVariantSequencesAndObservations(variantReportObservations, sequenceArr, diagnosticReport, specimen, patient, DOM);
     addVariantReportCopyNumberAlterationSequencesAndObservations(variantReportObservations, sequenceArr, diagnosticReport, specimen, patient, DOM);
     addVariantReportRearrangementSequencesAndObservations(variantReportObservations, sequenceArr, diagnosticReport, specimen, patient, DOM);
-    putNonInitializedResourcesToHapiFhirDstu3Server($http, sequenceArr, 0);
-    putNonInitializedResourcesToHapiFhirDstu3Server($http, variantReportObservations, 0);
 
     //add variant-report observations to observation array so we can link to DiagnosticReport
     observationArr = observationArr.concat(variantReportObservations);
@@ -296,7 +294,6 @@ function completeResources(scope, $http, FoundationMedicine, organization, order
     provenanceAddAgentFromFoundation(provenance.provenanceResource, practitionerIdsAndNames);
 
     var foundationPractitionerArr = foundationPractitionerAssertersToArr(foundationPractitionerAsserters().practitioners, practitionerIdsAndNames);
-    putNonInitializedResourcesToHapiFhirDstu3Server($http, foundationPractitionerArr, 0);
 
     addResourceRelativeUrlsToUploadedPatientInfo(observationArr.concat(foundationPractitionerArr, sequenceArr),
         scope.uploadedPatientInfo[patient.getPatientId()]);
@@ -311,9 +308,19 @@ function completeResources(scope, $http, FoundationMedicine, organization, order
     var resourceArr = [FoundationMedicine, organization, orderingPhysician, pathologist, patient, condition, specimen,
         diagnosticReport, procedureRequest, provenance].concat(observationArr);
 
-    setTimeout(function() {
-        putResourcesToHapiFhirDstu3Server(scope, $http, resourceArr, 0, nResources, "Completing", fileIndex, files, nFiles);
-    }, 3000);
+    var completionConfig = {
+        scope: scope,
+        resourceArr: resourceArr,
+        index: 0,
+        nResources: nResources,
+        method: "Completing",
+        fileIndex: fileIndex,
+        files: files,
+        nFiles: nFiles,
+        DOM: DOM
+    };
+
+    putNonInitializedResourcesToHapiFhirDstu3Server($http, sequenceArr.concat(variantReportObservations, foundationPractitionerArr), 0, completionConfig);
 }
 
 function generateResourcesFromFoundation(scope, files, $http) {
@@ -352,15 +359,20 @@ function putResourcesToHapiFhirDstu3Server(scope, $http, resourceArr, index, nRe
     return;
 }
 
-function putNonInitializedResourcesToHapiFhirDstu3Server($http, resourceArr, index) {
+function putNonInitializedResourcesToHapiFhirDstu3Server($http, resourceArr, index, completionConfig) {
     if(resourceArr.length == index) {
+        if(completionConfig != null) {
+            putResourcesToHapiFhirDstu3Server(completionConfig.scope, $http, completionConfig.resourceArr, completionConfig.index,
+                completionConfig.nResources, completionConfig.method, completionConfig.fileIndex, completionConfig.files, completionConfig.nFiles,
+                completionConfig.DOM);
+        }
         return;
     }
     var type = resourceArr[index].resourceType;
-    putNonInitializedResourceToHapiFhirDstu3Server($http, resourceArr, type, index);
+    putNonInitializedResourceToHapiFhirDstu3Server($http, resourceArr, type, index, completionConfig);
 }
 
-function putNonInitializedResourceToHapiFhirDstu3Server($http, resourceArr, type, index) {
+function putNonInitializedResourceToHapiFhirDstu3Server($http, resourceArr, type, index, completionConfig) {
     var data = resourceArr[index][type.lowerCaseFirstLetter() + "Resource"];
     var id = data.id;
     var baseUrl = $("#base-url").val();
@@ -369,7 +381,7 @@ function putNonInitializedResourceToHapiFhirDstu3Server($http, resourceArr, type
         d3.select("#parser-div").append("p")
                 .html("<b>" + "Initializing" + ":</b> " + data.resourceType + " resource <b>" + id+ "</b> <span style='color:#2f0'>successfully</span> PUT to " + baseUrl);
         window.scrollTo(0,document.body.scrollHeight);
-        putNonInitializedResourcesToHapiFhirDstu3Server($http, resourceArr, index+1);
+        putNonInitializedResourcesToHapiFhirDstu3Server($http, resourceArr, index+1, completionConfig);
     }, function(error) {
         console.log(error);
     });
