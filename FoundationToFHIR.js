@@ -785,7 +785,7 @@ function sequenceAddCopyNumberAlterationId(sequenceResource, reportId, variantNu
 }
 
 function sequenceAddRearrangementId(sequenceResource, reportId, variantNumber, ext) {
-    sequenceResource.id = reportId + "-rearrangement-" + variantNumber + "-" + ext;
+    sequenceResource.id = reportId + "-rearrangement-" + variantNumber + "-" + ext + "-seq";
 }
 
 function sequenceAddTypeFromFoundation(sequenceResource, nucleicAcidType) {
