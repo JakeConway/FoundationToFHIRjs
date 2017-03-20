@@ -482,7 +482,7 @@ function observationAndSequenceAddRearrangementInfo(observationArr, sequenceArr,
     sequenceRearrangementAddStructureVariantFromFoundation(sequence1.sequenceResource, rearrangement, "pos1");
     sequenceAddReferenceToSpecimen(sequence1.sequenceResource, specimen.getSpecimenId(), specimen.getSpecimenType());
     sequenceAddTypeFromFoundation(sequence1.sequenceResource, nucleicAcidType);
-    rearrangementAddRefSeqChromosome(sequence1.sequenceResource, rearrangement, "pos1");
+    sequenceRearrangementAddRefSeqChromosome(sequence1.sequenceResource, rearrangement, "pos1");
     addPatientSubjectReference(sequence1.sequenceResource, patient.getPatientId(), patient.getPatientFullName());
     addFoundationAsPerformer(sequence1.sequenceResource);
     sequenceArr.push(sequence1);
@@ -502,7 +502,7 @@ function observationAndSequenceAddRearrangementInfo(observationArr, sequenceArr,
     sequenceRearrangementAddStructureVariantFromFoundation(sequence2.sequenceResource, rearrangement, "pos2");
     sequenceAddReferenceToSpecimen(sequence2.sequenceResource, specimen.getSpecimenId(), specimen.getSpecimenType());
     sequenceAddTypeFromFoundation(sequence2.sequenceResource, nucleicAcidType);
-    rearrangementAddRefSeqChromosome(sequence2.sequenceResource, rearrangement, "pos2");
+    sequenceRearrangementAddRefSeqChromosome(sequence2.sequenceResource, rearrangement, "pos2");
     addPatientSubjectReference(sequence2.sequenceResource, patient.getPatientId(), patient.getPatientFullName());
     addFoundationAsPerformer(sequence2.sequenceResource);
     sequenceArr.push(sequence2);
@@ -792,7 +792,7 @@ function sequenceAddTypeFromFoundation(sequenceResource, nucleicAcidType) {
     sequenceResource.type = nucleicAcidType;
 }
 
-function rearrangementAddRefSeqChromosome(sequenceResource, element, attribute) {
+function sequenceRearrangementAddRefSeqChromosome(sequenceResource, element, attribute) {
     sequenceResource.referenceSeq = {
         chromosome: {
             text: element.getAttribute(attribute).split(":")[0]
