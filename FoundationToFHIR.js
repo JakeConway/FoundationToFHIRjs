@@ -584,7 +584,7 @@ function addCopyNumberAlterationId(observationResource, reportId, variantNumber)
 }
 
 function addRearrangementId(observationResource, reportId, variantNumber, ext) {
-    observationResource.id = reportId + "-rearrangement-" + variantNumber + "-" + ext;
+    observationResource.id = reportId + "-rearrangement-" + ext + "-" + variantNumber;
 }
 
 function addCopyNumberAlterationEventFromFoundation(observationResource, copyNumberAlt) {
@@ -785,7 +785,7 @@ function sequenceAddCopyNumberAlterationId(sequenceResource, reportId, variantNu
 }
 
 function sequenceAddRearrangementId(sequenceResource, reportId, variantNumber, ext) {
-    sequenceResource.id = reportId + "-rearrangement-" + variantNumber + "-" + ext + "-seq";
+    sequenceResource.id = reportId + "-rearrangement-" + ext + "-" + variantNumber + "-seq";
 }
 
 function sequenceAddTypeFromFoundation(sequenceResource, nucleicAcidType) {
