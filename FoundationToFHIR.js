@@ -175,7 +175,6 @@ function initResources(scope, $http, files, i, l) {
     // e.g. if target-gene exists and is linked to other-gene, but other-gene isnt on server when target-gene is PUT, then it will throw error
     var rearrangements = DOM.getElementsByTagName("rearrangement");
     var rearrangementsArr = makeInitRearrangementsArr(rearrangements, diagnosticReport.getDiagnosticReportId());
-    putNonInitializedResourcesToHapiFhirDstu3Server($http, rearrangementsArr, 0, null);
 
     var resourceArr = [FoundationMedicine, organization, orderingPhysician, pathologist, patient, condition, specimen,
         diagnosticReport, procedureRequest, provenance].concat(observationArr);
@@ -193,7 +192,20 @@ function initResources(scope, $http, files, i, l) {
         "Provenance/" + provenance.getProvenanceId()
     ];
 
-    putResourcesToHapiFhirDstu3Server(scope, $http, resourceArr, 0, resourceArr.length, "Initializing", i, files, l, DOM);
+    //putResourcesToHapiFhirDstu3Server(scope, $http, resourceArr, 0, resourceArr.length, "Initializing", i, files, l, DOM);
+    var completionConfig = {
+        scope: scope,
+        resourceArr: resourceArr,
+        index: 0,
+        nResources: resourceArr.length,
+        method: "Initializing",
+        fileIndex: i,
+        files: files,
+        nFiles: l,
+        DOM: DOM
+    };
+    // non initialized (or variant-report specific information.. short variants, copy number alts, rearrangements , etc..)
+    putNonInitializedResourcesToHapiFhirDstu3Server($http, rearrangementsArr, 0, completionConfig);
 }
 
 function makeInitRearrangementsArr(rearrangements, reportId) {
@@ -320,6 +332,7 @@ function completeResources(scope, $http, FoundationMedicine, organization, order
         DOM: DOM
     };
 
+    // non initialized (or variant-report specific information.. short variants, copy number alts, rearrangements , etc..)
     putNonInitializedResourcesToHapiFhirDstu3Server($http, sequenceArr.concat(variantReportObservations, foundationPractitionerArr), 0, completionConfig);
 }
 
