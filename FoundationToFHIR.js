@@ -400,9 +400,9 @@ function putToHapiFhirDstu3Server(scope, $http, type, resourceArr, index, nResou
         window.scrollTo(0,document.body.scrollHeight);
         putResourcesToHapiFhirDstu3Server(scope, $http, resourceArr, index+1, nResources, method, fileIndex, files, nFiles, DOM);
     }, function (error) {
-        console.log(error);
         d3.select("#parser-div").append("p")
                 .html("<b>" + method + ":</b> " + data.resourceType + " resource <b>" + id + "</b> <span style='color:red'>ERRORED</span> during PUT. Please see console for details");
+        console.log(error);
         window.scrollTo(0,document.body.scrollHeight);
         putResourcesToHapiFhirDstu3Server(scope, $http, resourceArr, index+1, nResources, method, fileIndex, files, nFiles, DOM);
     });
@@ -490,7 +490,7 @@ function addVariantReportRearrangementSequencesAndObservations(observationArr, s
 
 function observationAndSequenceAddRearrangementInfo(observationArr, sequenceArr, rearrangement, nucleicAcidType, date, specimen, patient, reportId, variantNumber) {
     var sequence1 = foundationFhirSequence();
-    sequenceAddRearrangementId(sequence1.sequenceResource, reportId, variantNumber, "target-gene");
+    sequenceAddRearrangementId(sequence1.sequenceResource, reportId, variantNumber, "targeted-gene");
     sequenceRearrangementAddStructureVariantFromFoundation(sequence1.sequenceResource, rearrangement, "pos1");
     sequenceAddReferenceToSpecimen(sequence1.sequenceResource, specimen.getSpecimenId(), specimen.getSpecimenType());
     sequenceAddTypeFromFoundation(sequence1.sequenceResource, nucleicAcidType);
