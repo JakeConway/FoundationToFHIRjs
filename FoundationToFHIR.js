@@ -202,8 +202,8 @@ function makeInitRearrangementsArr(rearrangements, reportId) {
     for(var i = 0; i < l; i++) {
         var observation1 = foundationFhirObservation();
         var observation2 = foundationFhirObservation();
-        observation1.observationResource.id =  reportId + "-rearrangement-" + (i+1) + "-targeted-gene";
-        observation2.observationResource.id =  reportId + "-rearrangement-" + (i+1) + "-other-gene";
+        observation1.observationResource.id =  reportId + "-rearrangement-targeted-gene-" + (i+1);
+        observation2.observationResource.id =  reportId + "-rearrangement-other-gene-" + (i+1);
         arr.push(observation1, observation2);
     }
     return arr;
