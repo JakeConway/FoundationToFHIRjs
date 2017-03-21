@@ -129,7 +129,7 @@ function initResources(scope, $http, files, i, l) {
             }).then(function(success){
                 setTimeout(function() {
                     window.location = "/checkpatients/";
-                }, 1000);
+                }, 500);
             }, function(error) {
                 console.log(error);
             });
