@@ -47,6 +47,7 @@ foundationToFhir.directive("grabFiles", function () {
             .attr("multiple", "multiple")
             .style("display", "none")
             .on("change", function () {
+                d3.select("#status-placeholder").remove();
                 var fileArr = readFiles(this.files);
                 setTimeout(function () {
                     scope.$apply(function () {
