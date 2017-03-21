@@ -30,13 +30,22 @@ foundationToFhir.directive("grabFiles", function () {
         var el = element[0];
 
         d3.select(el).append("p")
+            .attr("class", "card-text")
+            .style("color", "black")
+            .style("margin-bottom", "2px")
             .html("File Input: ");
 
-        d3.select(el).append("input")
+        d3.select(el).append("label")
+            .attr("class", "btn btn-primary btn-file")
+            .attr("for", "foundationFiles")
+            .style("cursor", "pointer")
+            .html("Upload")
+            .append("input")
             .attr("id", "foundationFiles")
             .attr("name", "foundationFiles[]")
             .attr("type", "file")
             .attr("multiple", "multiple")
+            .style("display", "none")
             .on("change", function () {
                 var fileArr = readFiles(this.files);
                 setTimeout(function () {
@@ -59,13 +68,17 @@ foundationToFhir.directive("baseUrl", function() {
        var el = element[0];
 
        d3.select(el).append("p")
+           .attr("class", "card-text")
+           .style("color", "black")
+           .style("margin-bottom", "2px")
            .html("Base URL: ");
 
        d3.select(el).append("input")
            .attr("id", "base-url")
            .attr("type", "text")
            .attr("name", "baseurl")
-           .style("width", "300px");
+           .style("width", "300px")
+           .style("margin-bottom", "16px");
 
        $("#base-url").val("https://fhirtest.uhn.ca/baseDstu3/");
    }
@@ -85,6 +98,10 @@ foundationToFhir.directive("foundationToFhirDirective", ['$http', function ($htt
         scope.uploadedPatientInfo = {};
         var el = element[0];
 
+        $("#parser-div").height(($(window).height() - $("#parser-div").offset().top)-16);
+
+        console.log($("#parser-div").offset().top);
+
         scope.$watch("files", function (updated) {
             if (files == updated) {
                 return;
@@ -99,8 +116,10 @@ foundationToFhir.directive("foundationToFhirDirective", ['$http', function ($htt
 function initResources(scope, $http, files, i, l) {
     if (i == l) {
         d3.select("#parser-div").append("h2")
+            .attr("align", "center")
+            .style("color", "black")
             .html("----- COMPLETE -----");
-        window.scrollTo(0,document.body.scrollHeight);
+        $("#parser-div").scrollTop($("#parser-div")[0].scrollHeight);
         var patientInfo = scope.uploadedPatientInfo;
         setTimeout(function() {
             $http({
@@ -110,7 +129,7 @@ function initResources(scope, $http, files, i, l) {
             }).then(function(success){
                 setTimeout(function() {
                     window.location = "/checkpatients/";
-                }, 200);
+                }, 1000);
             }, function(error) {
                 console.log(error);
             });
@@ -389,13 +408,18 @@ function putNonInitializedResourceToHapiFhirDstu3Server($http, resourceArr, type
     var data = resourceArr[index][type.lowerCaseFirstLetter() + "Resource"];
     var id = data.id;
     var baseUrl = $("#base-url").val();
-    var url = baseUrl + type+ "/" + id+ "?_format=json";
-    $http.put(url, data).then(function(success) {
+    var url = baseUrl + type + "/" + id + "?_format=json";
+    $http.put(url, data).then(function (success) {
         d3.select("#parser-div").append("p")
-                .html("<b>" + "Initializing" + ":</b> " + data.resourceType + " resource <b>" + id+ "</b> <span style='color:#2f0'>successfully</span> PUT to " + baseUrl);
-        window.scrollTo(0,document.body.scrollHeight);
-        putNonInitializedResourcesToHapiFhirDstu3Server($http, resourceArr, index+1, completionConfig);
-    }, function(error) {
+            .style("color", "black")
+            .html("<b>" + "Initializing" + ":</b> " + data.resourceType + " resource <b>" + id + "</b> <span style='color:#2f0'>successfully</span> PUT to " + baseUrl);
+        $("#parser-div").scrollTop($("#parser-div")[0].scrollHeight);
+        putNonInitializedResourcesToHapiFhirDstu3Server($http, resourceArr, index + 1, completionConfig);
+    }, function (error) {
+        d3.select("#parser-div").append("p")
+            .style("color", "black")
+            .html("<b>" + method + ":</b> " + data.resourceType + " resource <b>" + id + "</b> <span style='color:red'>ERRORED</span> during PUT. Please see console for details");
+        $("#parser-div").scrollTop($("#parser-div")[0].scrollHeight);
         console.log(error);
     });
 }
@@ -409,15 +433,16 @@ function putToHapiFhirDstu3Server(scope, $http, type, resourceArr, index, nResou
 
     $http.put(url, data).then(function (success) {
         d3.select("#parser-div").append("p")
-                .html("<b>" + method + ":</b> " + data.resourceType + " resource <b>" + id + "</b> <span style='color:#2f0'>successfully</span> PUT to " + baseUrl);
-        window.scrollTo(0,document.body.scrollHeight);
-        putResourcesToHapiFhirDstu3Server(scope, $http, resourceArr, index+1, nResources, method, fileIndex, files, nFiles, DOM);
+            .style("color", "black")
+            .html("<b>" + method + ":</b> " + data.resourceType + " resource <b>" + id + "</b> <span style='color:#2f0'>successfully</span> PUT to " + baseUrl);
+        $("#parser-div").scrollTop($("#parser-div")[0].scrollHeight);
+        putResourcesToHapiFhirDstu3Server(scope, $http, resourceArr, index + 1, nResources, method, fileIndex, files, nFiles, DOM);
     }, function (error) {
         d3.select("#parser-div").append("p")
-                .html("<b>" + method + ":</b> " + data.resourceType + " resource <b>" + id + "</b> <span style='color:red'>ERRORED</span> during PUT. Please see console for details");
+            .style("color", "black")
+            .html("<b>" + method + ":</b> " + data.resourceType + " resource <b>" + id + "</b> <span style='color:red'>ERRORED</span> during PUT. Please see console for details");
+        $("#parser-div").scrollTop($("#parser-div")[0].scrollHeight);
         console.log(error);
-        window.scrollTo(0,document.body.scrollHeight);
-        putResourcesToHapiFhirDstu3Server(scope, $http, resourceArr, index+1, nResources, method, fileIndex, files, nFiles, DOM);
     });
 }
 

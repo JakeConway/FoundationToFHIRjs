@@ -3,17 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <title>Foundation to FHIR</title>
+    <!-- Bootstrap stylesheet -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
+          integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+
+    <!-- javascript libraries -->
     <script src="angular.min.js" type="text/javascript"></script>
     <script src="jquery.min.js" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"
+            integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb"
+            crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"
+            integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
+            crossorigin="anonymous"></script>
     <script src="d3.min.js" type="text/javascript"></script>
     <script src="FoundationToFHIR.js" type="text/javascript"></script>
 </head>
 <body ng-controller="foundationToFhirCtrl">
-<div base-url>
-</div>
-<div grab-files>
-</div>
-<div id="parser-div" foundation-to-fhir-directive files="files">
+<!-- Image and text -->
+<nav class="navbar navbar-inverse bg-inverse">
+    <a class="navbar-brand" href="">
+        <img src="http://niquola.github.io/hl7-russia-2014-fhir-slides/fhiri.png" width="30" height="30"
+             class="d-inline-block align-top" alt="">
+        FM-to-FHIR
+    </a>
+</nav>
+<div class="container">
+    <h3>Configuration</h3>
+    <div class="card card-inverse">
+        <div class="card block" style="background-color: #f5f5f5; border-color: #e3e3e3;">
+            <div base-url>
+            </div>
+            <div grab-files>
+            </div>
+        </div>
+    </div>
+    <h3>Status</h3>
+    <div class="card card-inverse">
+        <div class="card block" style="background-color: #f5f5f5; border-color: #e3e3e3;">
+            <div id="parser-div" foundation-to-fhir-directive files="files" style="overflow-y: scroll">
+            </div>
+        </div>
+    </div>
 </div>
 </body>
 </html>
