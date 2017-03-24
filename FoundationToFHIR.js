@@ -101,8 +101,6 @@ foundationToFhir.directive("foundationToFhirDirective", ['$http', function ($htt
 
         $("#parser-div").height(($(window).height() - $("#parser-div").offset().top)-16);
 
-        console.log($("#parser-div").offset().top);
-
         scope.$watch("files", function (updated) {
             if (files == updated) {
                 return;
@@ -1550,6 +1548,7 @@ function diagnosticReportAddContainedArr(diagnosticReportResource, observationAr
 
 function diagnosticReportAddConclusionFromFoundation(diagnosticReport, DOM) {
     var summary = DOM.getElementsByTagName("Summaries")[0];
+    var genesDOM = DOM.getElementsByTagName("Genes")[0];
     var alterationCount = parseInt(summary.getAttribute("alterationCount")),
         sensitizingCount = parseInt(summary.getAttribute("sensitizingCount")),
         resistiveCount = parseInt(summary.getAttribute("resistiveCount")),
@@ -1567,7 +1566,8 @@ function diagnosticReportAddConclusionFromFoundation(diagnosticReport, DOM) {
         " genomic alterations | " + sensitizingCount + " therapies associated with potential clinical benefit | " +
         resistiveCount + " therapies associated with lack of response | " + clinicalTrialCount + " clinical trials. " +
         statement;
-    diagnosticReport.observationsInReport = alterationCount + sensitizingCount + resistiveCount + clinicalTrialCount;
+
+    diagnosticReport.observationsInReport = genesDOM.getElementsByTagName("Gene").length + sensitizingCount + resistiveCount + clinicalTrialCount;
 }
 
 function diagnosticReportReferenceObservations(diagnosticReportResource, observationArr) {
