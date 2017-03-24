@@ -194,6 +194,10 @@ function initResources(scope, $http, files, i, l) {
     var rearrangements = DOM.getElementsByTagName("rearrangement");
     var rearrangementsArr = makeInitRearrangementsArr(rearrangements, diagnosticReport.getDiagnosticReportId());
 
+    var foundationPractitionerAsserterArr = initPractitionerAssertersFromFoundation(DOM);
+
+    var preInitResourceArr = rearrangementsArr.concat(foundationPractitionerAsserterArr);
+
     var resourceArr = [FoundationMedicine, organization, orderingPhysician, pathologist, patient, condition, specimen,
         diagnosticReport, procedureRequest, provenance].concat(observationArr);
 
@@ -223,7 +227,7 @@ function initResources(scope, $http, files, i, l) {
         DOM: DOM
     };
     // non initialized (or variant-report specific information.. short variants, copy number alts, rearrangements , etc..)
-    putNonInitializedResourcesToHapiFhirDstu3Server($http, rearrangementsArr, 0, completionConfig);
+    putNonInitializedResourcesToHapiFhirDstu3Server($http, preInitResourceArr, 0, completionConfig);
 }
 
 function makeInitRearrangementsArr(rearrangements, reportId) {
@@ -237,6 +241,33 @@ function makeInitRearrangementsArr(rearrangements, reportId) {
         arr.push(observation1, observation2);
     }
     return arr;
+}
+
+function initPractitionerAssertersFromFoundation(DOM) {
+    var names = [],
+        practitionerArr = [];
+    names.push(DOM.getElementsByTagName("OpName")[0].childNodes[0].nodeValue.trim());
+    var namesFromText = DOM.getElementsByTagName("Text")[0].childNodes[0].nodeValue.split("|");
+    var l = namesFromText.length;
+    for(var i = 0; i < l; i++) {
+        var name = namesFromText[i].split(",")[0].trim();
+        if(names.indexOf(name) == -1) {
+            names.push(name);
+        }
+    }
+    var nNames = names.length;
+    for (i = 0; i < nNames; i++) {
+        var nameArr = names[i].split(" ");
+        var lastName = nameArr[nameArr.length-1];
+        practitionerArr.push({
+           practitionerResource: {
+               id: lastName + "-FM",
+               resourceType: "Practitioner"
+           },
+            resourceType: "Practitioner"
+        });
+    }
+    return practitionerArr;
 }
 
 function foundationPractitionerAssertersToArr(practitioners, practitionerIdsAndNames) {
@@ -323,7 +354,7 @@ function completeResources(scope, $http, FoundationMedicine, organization, order
     var practitionerIdsAndNames = getPractitionerNamesAndIdsFromSignatures(provenance.getSignaturesArray());
     provenanceAddAgentFromFoundation(provenance.provenanceResource, practitionerIdsAndNames);
 
-    var foundationPractitionerArr = foundationPractitionerAssertersToArr(foundationPractitionerAsserters().practitioners, practitionerIdsAndNames);
+    var foundationPractitionerArr = foundationPractitionerAssertersToArr(foundationPractitionerAsserters().practitioners, []);
 
     addResourceRelativeUrlsToUploadedPatientInfo(observationArr.concat(foundationPractitionerArr, sequenceArr),
         scope.uploadedPatientInfo[patient.getPatientId()]);
@@ -417,7 +448,7 @@ function putNonInitializedResourceToHapiFhirDstu3Server($http, resourceArr, type
     }, function (error) {
         d3.select("#parser-div").append("p")
             .style("color", "black")
-            .html("<b>" + method + ":</b> " + data.resourceType + " resource <b>" + id + "</b> <span style='color:red'>ERRORED</span> during PUT. Please see console for details");
+            .html("<b>" + "Initializing" + ":</b> " + data.resourceType + " resource <b>" + id + "</b> <span style='color:red'>ERRORED</span> during PUT. Please see console for details");
         $("#parser-div").scrollTop($("#parser-div")[0].scrollHeight);
         console.log(error);
     });
@@ -1003,8 +1034,22 @@ function provenanceAddSignaturesFromFoundation(provenanceResource, foundationPra
     }
     provenanceResource.signature = [];
     var nNames = names.length;
-    for(i = 0; i < nNames; i++) {
-        var practitionerAsserterResource = foundationPractitionerAsserters.practitioners[names[i]];
+    for (i = 0; i < nNames; i++) {
+        var nameArr = names[i].split(" ");
+        console.log(nameArr);
+        var lastName = nameArr[nameArr.length-1];
+        var practitionerAsserterResource = {
+            resourceType: "Practitioner",
+            id: lastName + "-FM",
+            name: [{
+                use: "official",
+                text: name[i],
+                family: lastName,
+                given: nameArr.pop(),
+                prefix: ["M.D."]
+            }]
+        };
+        //var practitionerAsserterResource = foundationPractitionerAsserters.practitioners[names[i]];
         provenanceResource.signature.push({
             type: [{
                 system: "http://hl7.org/fhir/ValueSet/signature-type",
