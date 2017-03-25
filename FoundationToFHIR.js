@@ -1036,8 +1036,8 @@ function provenanceAddSignaturesFromFoundation(provenanceResource, foundationPra
     var nNames = names.length;
     for (i = 0; i < nNames; i++) {
         var nameArr = names[i].split(" ");
-        nameArr.pop();
         var lastName = nameArr[nameArr.length-1];
+        nameArr.pop();
         var practitionerAsserterResource = {
             resourceType: "Practitioner",
             id: lastName + "-FM",
