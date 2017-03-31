@@ -450,6 +450,7 @@ function putNonInitializedResourceToHapiFhirDstu3Server($http, resourceArr, type
             .style("color", "black")
             .html("<b>" + "Initializing" + ":</b> " + data.resourceType + " resource <b>" + id + "</b> <span style='color:red'>ERRORED</span> during PUT. Please see console for details");
         $("#parser-div").scrollTop($("#parser-div")[0].scrollHeight);
+        console.log(data);
         console.log(error);
     });
 }
@@ -549,7 +550,7 @@ function addVariantReportRearrangementSequencesAndObservations(observationArr, s
     var date = diagnosticReport.getReportDate();
     var reportId = diagnosticReport.getDiagnosticReportId();
     // Might need to account for more than 1 sample
-    var nucleicAcidType = DOM.getElementsByTagName("sample")[0].getAttribute("nucleic-acid-type");
+    var nucleicAcidType = DOM.getElementsByTagName("sample")[0].getAttribute("nucleic-acid-type").toLowerCase();
     var l = rearrangements.length;
     for(var i = 0; i < l; i++) {
         observationAndSequenceAddRearrangementInfo(observationArr, sequenceArr, rearrangements[i], nucleicAcidType, date, specimen, patient, reportId, i+1);
@@ -624,7 +625,7 @@ function addVariantReportCopyNumberAlterationSequencesAndObservations(observatio
     var date = diagnosticReport.getReportDate();
     var reportId = diagnosticReport.getDiagnosticReportId();
     // Might need to account for more than 1 sample
-    var nucleicAcidType = DOM.getElementsByTagName("sample")[0].getAttribute("nucleic-acid-type");
+    var nucleicAcidType = DOM.getElementsByTagName("sample")[0].getAttribute("nucleic-acid-type").toLowerCase();
     var l = copyNumberAlterations.length;
     for(var i = 0; i < l; i++) {
         observationAndSequenceAddCopyNumberAlterationInfo(observationArr, sequenceArr, copyNumberAlterations[i], nucleicAcidType, date, specimen, patient, reportId, i+1);
@@ -724,7 +725,7 @@ function addVariantReportShortVariantSequencesAndObservations(observationArr, se
     var date = diagnosticReport.getReportDate();
     var reportId = diagnosticReport.getDiagnosticReportId();
     // Might need to account for more than 1 sample
-    var nucleicAcidType = DOM.getElementsByTagName("sample")[0].getAttribute("nucleic-acid-type");
+    var nucleicAcidType = DOM.getElementsByTagName("sample")[0].getAttribute("nucleic-acid-type").toLowerCase();
     var l = shortVariants.length;
     for(var i = 0; i < l; i++) {
         observationAndSequenceAddShortVariantInfo(observationArr, sequenceArr, shortVariants[i], nucleicAcidType, date, specimen, patient, reportId, i+1);
