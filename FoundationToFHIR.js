@@ -1776,13 +1776,24 @@ function practitionerAddIdFromFoundation(practitionerResource, foundationTag, DO
 
 function practitionerAddNameFromFoundation(practitionerResource, foundationTag, DOM) {
     var name = DOM.getElementsByTagName(foundationTag)[0].childNodes[0].nodeValue;
-    name = name.split(", ");
-    practitionerResource.name = [{}];
-    practitionerResource.name[0].given = name[1].split(" ");
-    practitionerResource.name[0].family = name[0];
-    practitionerResource.name[0].prefix = ["M.D."];
-    practitionerResource.name[0].text = practitionerResource.name[0].given.join(" ") +
-        " " + practitionerResource.name[0].family + ", " + practitionerResource.name[0].prefix.join(", ");
+    if(name.includes(",")) {
+        name = name.split(", ");
+        practitionerResource.name = [{}];
+        practitionerResource.name[0].given = name[1].split(" ");
+        practitionerResource.name[0].family = name[0];
+        practitionerResource.name[0].prefix = ["M.D."];
+        practitionerResource.name[0].text = practitionerResource.name[0].given.join(" ") +
+            " " + practitionerResource.name[0].family + ", " + practitionerResource.name[0].prefix.join(", ");
+    }
+    else {
+        name = name.split(" ");
+        practitionerResource.name = [{}];
+        practitionerResource.name[0].given = name[0].split(" ");
+        practitionerResource.name[0].family = name[1];
+        practitionerResource.name[0].prefix = ["M.D."];
+        practitionerResource.name[0].text = practitionerResource.name[0].given.join(" ") +
+            " " + practitionerResource.name[0].family + ", " + practitionerResource.name[0].prefix.join(", ");
+    }
 }
 
 //Initialize a FHIR organization object to be built by a Foundation XML file
