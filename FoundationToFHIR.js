@@ -324,6 +324,14 @@ function completeResources(scope, $http, FoundationMedicine, organization, order
     addPatientSubjectReference(condition.conditionResource, patient.getPatientId(), patient.getPatientFullName());
     conditionAddEvidenceDetailReference(condition.conditionResource, diagnosticReport.getDiagnosticReportId(), DOM);
 
+    var procedureRequest = foundationFhirProcedureRequest();
+    procedureRequestAddId(procedureRequest.procedureRequestResource, diagnosticReport.getDiagnosticReportId());
+    procedureRequestAddNote(procedureRequest.procedureRequestResource, diagnosticReport.getDiagnosticReportTestPerformed());
+    procedureRequestAddreasonReference(procedureRequest.procedureRequestResource, condition.getConditionId(), condition.getCondition());
+    procedureRequestAddRequester(procedureRequest.procedureRequestResource, orderingPhysician, organization);
+    addPatientSubjectReference(procedureRequest.procedureRequestResource, patient.getPatientId(), patient.getPatientFullName());
+    addFoundationAsPerformer(procedureRequest.procedureRequestResource);
+
     procedureRequestAddNote(procedureRequest.procedureRequestResource, diagnosticReport.getDiagnosticReportTestPerformed());
     procedureRequestAddreasonReference(procedureRequest.procedureRequestResource, condition.getConditionId(), condition.getCondition());
     procedureRequestAddRequester(procedureRequest.procedureRequestResource, orderingPhysician, organization);
@@ -347,7 +355,7 @@ function completeResources(scope, $http, FoundationMedicine, organization, order
     //add variant-report observations to observation array so we can link to DiagnosticReport
     observationArr = observationArr.concat(variantReportObservations);
 
-    provenanceAddRecordedTimeFromFoundation(provenance.provenanceResource, DOM);
+    addRecordedTimeFromFoundation(provenance.provenanceResource, DOM);
     provenanceAddTargetResources(provenance.provenanceResource, diagnosticReport.getDiagnosticReportId(),
         diagnosticReport.getNameOfDiagnosticReport(), observationArr);
     provenanceAddSignaturesFromFoundation(provenance.provenanceResource, foundationPractitionerAsserters(), provenance.getRecordedTime(), DOM);
@@ -928,6 +936,48 @@ function sequenceShortVariantAddCoverageFromFoundation(sequenceResource, shortVa
 
 }
 
+function foundationFhirDocumentReference() {
+    return {
+        documentReferenceResource: {
+            resourceType: "DocumentReference",
+            id: "FM-PDF-doc-ref-1",
+            status: "current",
+            docStatus: "final",
+            description: "Foundation Medicine report PDF version"
+        },
+        resourceType: "DocumentReference"
+
+    }
+}
+
+function documentReferenceAddBase64EncodingOfPDFFromFoundation(documentReferenceResource, DOM) {
+    documentReferenceResource.content = [{
+        attachment: {
+            contentType: "base64",
+            data: DOM.getElementsByTagName("ReportPDF")[0].childNodes[0].nodeValue
+        }
+    }];
+}
+
+function documentReferenceAddClinicalContextFromFoundation(documentReferenceResource, patient, diagnosticReport) {
+    documentReferenceResource.context = {
+        period: {
+            start: diagnosticReport.getReportDate(),
+            end: diagnosticReport.getReportDate()
+        },
+        sourcePatientInfo: {
+            reference: "Patient/" + patient.getPatientId(),
+            display: patient.getPatientFullName()
+        },
+        related: [{
+            ref: {
+                reference: "DiagnosticReport/" + diagnosticReport.getDiagnosticReportId(),
+                display: diagnosticReport.getDiagnosticReportTestPerformed()
+            }
+        }]
+    };
+}
+
 function foundationFhirProvenance() {
     return {
       provenanceResource: {
@@ -1068,10 +1118,6 @@ function provenanceAddSignaturesFromFoundation(provenanceResource, foundationPra
             }
         });
     }
-}
-
-function provenanceAddRecordedTimeFromFoundation(provenanceResource, DOM) {
-    provenanceResource.recorded = DOM.getElementsByTagName("ServerTime")[0].childNodes[0].nodeValue.replace(" ", "T");
 }
 
 function provenanceAddTargetResources(provenanceResource, diagnosticReportId, diagnosticReportDisplay, observationArr) {
@@ -1904,6 +1950,17 @@ function addFoundationAsPerformer(resource) {
         reference: "Organization/FM",
         display: "Foundation Medicine"
     }];
+}
+
+function addFoundationReferenceWithField(resource, field) {
+    resource[field] = [{
+        'reference': "Organization/FM",
+        'display': "Foundation Medicine"
+    }];
+}
+
+function addRecordedTimeFromFoundation(resource, DOM) {
+    resource.recorded = DOM.getElementsByTagName("ServerTime")[0].childNodes[0].nodeValue.replace(" ", "T");
 }
 
 function addPatientSubjectReference(resource, patientId, patientName) {
