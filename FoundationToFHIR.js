@@ -324,13 +324,13 @@ function completeResources(scope, $http, FoundationMedicine, organization, order
     addPatientSubjectReference(condition.conditionResource, patient.getPatientId(), patient.getPatientFullName());
     conditionAddEvidenceDetailReference(condition.conditionResource, diagnosticReport.getDiagnosticReportId(), DOM);
 
-    var procedureRequest = foundationFhirProcedureRequest();
-    procedureRequestAddId(procedureRequest.procedureRequestResource, diagnosticReport.getDiagnosticReportId());
-    procedureRequestAddNote(procedureRequest.procedureRequestResource, diagnosticReport.getDiagnosticReportTestPerformed());
-    procedureRequestAddreasonReference(procedureRequest.procedureRequestResource, condition.getConditionId(), condition.getCondition());
-    procedureRequestAddRequester(procedureRequest.procedureRequestResource, orderingPhysician, organization);
-    addPatientSubjectReference(procedureRequest.procedureRequestResource, patient.getPatientId(), patient.getPatientFullName());
-    addFoundationAsPerformer(procedureRequest.procedureRequestResource);
+    var documentReference = foundationFhirDocumentReference();
+    addPatientSubjectReference(documentReference.documentReferenceResource, patient.getPatientId(), patient.getPatientFullName());
+    addRecordedTimeFromFoundation(documentReference.documentReferenceResource, DOM);
+    addFoundationReferenceWithField(documentReference.documentReferenceResource, "author");
+    addFoundationReferenceWithField(documentReference.documentReferenceResource, "custodian");
+    documentReferenceAddBase64EncodingOfPDFFromFoundation(documentReference.documentReferenceResource, DOM);
+    documentReferenceAddClinicalContextFromFoundation(documentReference.documentReferenceResource, patient, diagnosticReport);
 
     procedureRequestAddNote(procedureRequest.procedureRequestResource, diagnosticReport.getDiagnosticReportTestPerformed());
     procedureRequestAddreasonReference(procedureRequest.procedureRequestResource, condition.getConditionId(), condition.getCondition());
@@ -374,7 +374,7 @@ function completeResources(scope, $http, FoundationMedicine, organization, order
 
     diagnosticReportAddContainedArr(diagnosticReport.diagnosticReportResource, observationArr, specimen);
 
-    var resourceArr = [FoundationMedicine, organization, orderingPhysician, pathologist, patient, condition, specimen,
+    var resourceArr = [FoundationMedicine, organization, orderingPhysician, pathologist, patient, condition, documentReference, specimen,
         diagnosticReport, procedureRequest, provenance].concat(observationArr);
 
     var completionConfig = {
