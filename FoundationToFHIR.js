@@ -951,12 +951,14 @@ function foundationFhirDocumentReference() {
 }
 
 function documentReferenceAddBase64EncodingOfPDFFromFoundation(documentReferenceResource, DOM) {
-    documentReferenceResource.content = [{
-        attachment: {
-            contentType: "base64",
-            data: DOM.getElementsByTagName("ReportPDF")[0].childNodes[0].nodeValue
-        }
-    }];
+    if(DOM.getElementsByTagName("ReportPDF")[0].childNodes.length > 0) {
+        documentReferenceResource.content = [{
+            attachment: {
+                contentType: "base64",
+                data: DOM.getElementsByTagName("ReportPDF")[0].childNodes[0].nodeValue
+            }
+        }];
+    }
 }
 
 function documentReferenceAddClinicalContextFromFoundation(documentReferenceResource, patient, diagnosticReport) {
